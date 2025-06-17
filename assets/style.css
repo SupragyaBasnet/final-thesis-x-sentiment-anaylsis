@@ -1,0 +1,81 @@
+/* Main container styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Metric boxes */
+.metric-box {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 22%;
+    text-align: center;
+}
+
+.metric-box h3 {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 1.1em;
+}
+
+.metric-box h2 {
+    margin: 10px 0 0 0;
+    font-size: 2em;
+}
+
+/* Graph containers */
+div[class*="graph-container"] {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Word cloud containers */
+.wordcloud-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+}
+
+/* Dropdown styles */
+.Select-control {
+    border-radius: 5px !important;
+    border: 1px solid #dcdde1 !important;
+}
+
+/* Headers */
+h1, h2, h3 {
+    color: #2c3e50;
+}
+
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+
+h2 {
+    font-size: 1.8em;
+    margin-bottom: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .metric-box {
+        width: 48%;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .metric-box {
+        width: 100%;
+    }
+} 
