@@ -1,5 +1,5 @@
 import pandas as pd
-from dash import Dash, html, dcc, Input, Output, callback
+from dash import Dash, html, dcc, Input, Output, callback, dash_table
 import plotly.express as px
 import plotly.graph_objects as go
 from wordcloud import WordCloud
@@ -41,7 +41,77 @@ except FileNotFoundError as e:
     print(f"Error loading data files: {e}. Please ensure 'cleaned_ai_tweets.csv' and 'ai_tweets_with_vader_sentiment.csv' exist.")
     exit()
 
-app = Dash(__name__)
+app = Dash(__name__, suppress_callback_exceptions=True)
+
+# Navigation bar
+navbar = html.Nav([
+    dcc.Link('Overview', href='/', className='nav-link'),
+    dcc.Link('Tweet Explorer', href='/explorer', className='nav-link'),
+    dcc.Link('Topic Modeling', href='/topics', className='nav-link'),
+    dcc.Link('Emotion Analysis', href='/emotions', className='nav-link'),
+    dcc.Link('Model Comparison', href='/comparison', className='nav-link'),
+    dcc.Link('Advanced Visualizations', href='/advanced', className='nav-link'),
+], className='navbar', style={'display': 'flex', 'gap': '32px', 'justifyContent': 'center', 'marginBottom': '32px', 'fontWeight': '600', 'fontSize': '1.1em'})
+
+# App layout with location
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    navbar,
+    html.Div(id='page-content')
+])
+
+# Page layouts (stubs for now)
+def overview_layout():
+    return html.Div([
+        html.H1('X Sentiment Analysis Dashboard', style={'textAlign': 'center'}),
+        html.P('Welcome to the Overview page. (All your main charts and insights will go here.)', style={'textAlign': 'center'})
+    ])
+
+def explorer_layout():
+    return html.Div([
+        html.H1('Tweet Explorer', style={'textAlign': 'center'}),
+        html.P('A searchable, filterable table of tweets will go here.')
+    ])
+
+def topics_layout():
+    return html.Div([
+        html.H1('Topic Modeling', style={'textAlign': 'center'}),
+        html.P('Trending topics by sentiment will go here.')
+    ])
+
+def emotions_layout():
+    return html.Div([
+        html.H1('Emotion Analysis', style={'textAlign': 'center'}),
+        html.P('Emotion detection and visualization will go here.')
+    ])
+
+def comparison_layout():
+    return html.Div([
+        html.H1('Model Comparison', style={'textAlign': 'center'}),
+        html.P('Compare VADER and transformer-based models here.')
+    ])
+
+def advanced_layout():
+    return html.Div([
+        html.H1('Advanced Visualizations', style={'textAlign': 'center'}),
+        html.P('Geographical and network visualizations will go here.')
+    ])
+
+# Callback for page routing
+@app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
+def display_page(pathname):
+    if pathname == '/explorer':
+        return explorer_layout()
+    elif pathname == '/topics':
+        return topics_layout()
+    elif pathname == '/emotions':
+        return emotions_layout()
+    elif pathname == '/comparison':
+        return comparison_layout()
+    elif pathname == '/advanced':
+        return advanced_layout()
+    else:
+        return overview_layout()
 
 # Function to generate word cloud as a base64 encoded image
 def plot_wordcloud(text, title):
@@ -97,118 +167,119 @@ def get_word_frequencies(text, n=20):
     return Counter(words).most_common(n)
 
 # Layout of the dashboard
-app.layout = html.Div([
-    html.H1('X Sentiment Analysis Dashboard', 
-            style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
-    
-    # Filters
-    html.Div([
-        html.Div([
-            html.Label('Select Sentiment Type:'),
-            dcc.Dropdown(
-                id='sentiment-type',
-                options=[
-                    {'label': 'Original Labels', 'value': 'original'},
-                    {'label': 'VADER Labels', 'value': 'vader'}
-                ],
-                value='original',
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '20px'}),
+def overview_layout():
+    return html.Div([
+        html.H1('X Sentiment Analysis Dashboard', 
+                style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
         
-        html.Div([
-            html.Label('Select Time Period:'),
-            dcc.Dropdown(
-                id='time-period',
-                options=[
-                    {'label': 'All Time', 'value': 'all'},
-                    {'label': 'Last Month', 'value': 'month'},
-                    {'label': 'Last Week', 'value': 'week'}
-                ],
-                value='all',
-                style={'width': '100%'}
-            )
-        ], style={'width': '30%', 'display': 'inline-block'})
-    ], className='section-card', style={'marginBottom': '30px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px', 'border': 'none'}),
-    
-    # Main metrics
-    html.Div([
-        html.Div([
-            html.H3('Total Tweets', style={'textAlign': 'center'}),
-            html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#22304a'})
-        ], className='metric-box'),
-        html.Div([
-            html.H3('Positive Tweets', style={'textAlign': 'center'}),
-            html.H2(id='positive-tweets', style={'textAlign': 'center', 'color': '#27ae60'})
-        ], className='metric-box'),
-        html.Div([
-            html.H3('Negative Tweets', style={'textAlign': 'center'}),
-            html.H2(id='negative-tweets', style={'textAlign': 'center', 'color': '#c0392b'})
-        ], className='metric-box'),
-        html.Div([
-            html.H3('Neutral Tweets', style={'textAlign': 'center'}),
-            html.H2(id='neutral-tweets', style={'textAlign': 'center', 'color': '#3498db'})
-        ], className='metric-box')
-    ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
-    
-    # Sentiment Distribution and Sentiment Over Time
-    html.Div([
-        html.Div([
-            html.H2('Sentiment Distribution', style={'textAlign': 'center'}),
-            dcc.Graph(id='sentiment-distribution')
-        ], style={'width': '48%', 'display': 'inline-block'}),
-        html.Div([
-            html.H2('Sentiment Over Time', style={'textAlign': 'center'}),
-            dcc.Graph(id='sentiment-timeline')
-        ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ], className='section-card'),
-    
-    # Word Clouds Section
-    html.Div([
-        html.H2('Word Clouds Analysis', style={'textAlign': 'center', 'marginBottom': '20px'}),
+        # Filters
         html.Div([
             html.Div([
-                html.H3('Positive Sentiment', style={'textAlign': 'center'}),
-                html.Img(id='positive-wordcloud', style={'width': '100%'})
-            ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Label('Select Sentiment Type:'),
+                dcc.Dropdown(
+                    id='sentiment-type',
+                    options=[
+                        {'label': 'Original Labels', 'value': 'original'},
+                        {'label': 'VADER Labels', 'value': 'vader'}
+                    ],
+                    value='original',
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '20px'}),
+            
             html.Div([
-                html.H3('Negative Sentiment', style={'textAlign': 'center'}),
-                html.Img(id='negative-wordcloud', style={'width': '100%'})
-            ], style={'width': '32%', 'display': 'inline-block'}),
-            html.Div([
-                html.H3('Neutral Sentiment', style={'textAlign': 'center'}),
-                html.Img(id='neutral-wordcloud', style={'width': '100%'})
-            ], style={'width': '32%', 'display': 'inline-block'})
-        ])
-    ], className='section-card'),
-    
-    # Word Frequency Analysis
-    html.Div([
-        html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px'}),
+                html.Label('Select Time Period:'),
+                dcc.Dropdown(
+                    id='time-period',
+                    options=[
+                        {'label': 'All Time', 'value': 'all'},
+                        {'label': 'Last Month', 'value': 'month'},
+                        {'label': 'Last Week', 'value': 'week'}
+                    ],
+                    value='all',
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%', 'display': 'inline-block'})
+        ], className='section-card', style={'marginBottom': '30px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px', 'border': 'none'}),
+        
+        # Main metrics
         html.Div([
             html.Div([
-                html.H3('Positive Words', style={'textAlign': 'center'}),
-                dcc.Graph(id='positive-words')
-            ], style={'width': '32%', 'display': 'inline-block'}),
+                html.H3('Total Tweets', style={'textAlign': 'center'}),
+                html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#22304a'})
+            ], className='metric-box'),
             html.Div([
-                html.H3('Negative Words', style={'textAlign': 'center'}),
-                dcc.Graph(id='negative-words')
-            ], style={'width': '32%', 'display': 'inline-block'}),
+                html.H3('Positive Tweets', style={'textAlign': 'center'}),
+                html.H2(id='positive-tweets', style={'textAlign': 'center', 'color': '#27ae60'})
+            ], className='metric-box'),
             html.Div([
-                html.H3('Neutral Words', style={'textAlign': 'center'}),
-                dcc.Graph(id='neutral-words')
-            ], style={'width': '32%', 'display': 'inline-block'})
-        ])
-    ], className='section-card'),
+                html.H3('Negative Tweets', style={'textAlign': 'center'}),
+                html.H2(id='negative-tweets', style={'textAlign': 'center', 'color': '#c0392b'})
+            ], className='metric-box'),
+            html.Div([
+                html.H3('Neutral Tweets', style={'textAlign': 'center'}),
+                html.H2(id='neutral-tweets', style={'textAlign': 'center', 'color': '#3498db'})
+            ], className='metric-box')
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+        
+        # Sentiment Distribution and Sentiment Over Time
+        html.Div([
+            html.Div([
+                html.H2('Sentiment Distribution', style={'textAlign': 'center'}),
+                dcc.Graph(id='sentiment-distribution')
+            ], style={'width': '48%', 'display': 'inline-block'}),
+            html.Div([
+                html.H2('Sentiment Over Time', style={'textAlign': 'center'}),
+                dcc.Graph(id='sentiment-timeline')
+            ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+        ], className='section-card'),
+        
+        # Word Clouds Section
+        html.Div([
+            html.H2('Word Clouds Analysis', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.Div([
+                html.Div([
+                    html.H3('Positive Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='positive-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Negative Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='negative-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Neutral Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='neutral-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'})
+            ])
+        ], className='section-card'),
+        
+        # Word Frequency Analysis
+        html.Div([
+            html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.Div([
+                html.Div([
+                    html.H3('Positive Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='positive-words')
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Negative Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='negative-words')
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Neutral Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='neutral-words')
+                ], style={'width': '32%', 'display': 'inline-block'})
+            ])
+        ], className='section-card'),
 
-    # Unified AI Insights Section
-    html.Div([
-        html.H2('AI Insights', style={'textAlign': 'center', 'marginBottom': '20px'}),
-        dcc.Graph(id='ai-insights-line-chart'),
-        html.Hr(style={'margin': '32px 0', 'borderTop': '1px solid #e3e7ee'}),
-        html.Div(id='ai-insights-box')
-    ], className='section-card', style={'maxWidth': '950px', 'margin': '0 auto 36px auto', 'background': '#f8fafd'})
-])
+        # Unified AI Insights Section
+        html.Div([
+            html.H2('AI Insights', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            dcc.Graph(id='ai-insights-line-chart'),
+            html.Hr(style={'margin': '32px 0', 'borderTop': '1px solid #e3e7ee'}),
+            html.Div(id='ai-insights-box')
+        ], className='section-card', style={'maxWidth': '950px', 'margin': '0 auto 36px auto', 'background': '#f8fafd'})
+    ])
 
 # Callback for updating metrics
 @callback(
@@ -509,6 +580,6 @@ def update_ai_insights_line_chart(sentiment_type, time_period):
     return fig
 
 if __name__ == '__main__':
-    print("\n--- Starting Dashboard ---")
+    print("\n--- Starting Multi-Page Dashboard ---")
     print("Open your web browser and go to http://127.0.0.1:8050/")
     app.run(debug=True) 
