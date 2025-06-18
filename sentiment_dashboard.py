@@ -268,13 +268,11 @@ def topics_layout():
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def comparison_layout():
-    # Only show if both sentiment_label and vader_sentiment exist
     if 'sentiment_label' not in df.columns or 'vader_sentiment' not in df.columns:
         return html.Div([
             html.H1('Model Comparison', style={'textAlign': 'center'}),
             html.P('Both VADER and transformer sentiment labels are required for comparison.', style={'textAlign': 'center', 'color': '#c0392b'})
         ])
-    # Confusion matrix
     cm = confusion_matrix(df['sentiment_label'], df['vader_sentiment'], labels=['positive', 'neutral', 'negative'])
     cm_fig = px.imshow(cm, 
         x=['positive', 'neutral', 'negative'], 
@@ -285,32 +283,77 @@ def comparison_layout():
         title='Confusion Matrix: VADER vs. Transformer'
     )
     cm_fig.update_layout(plot_bgcolor='#f8fafd', paper_bgcolor='#fff', margin=dict(l=40, r=40, t=60, b=40))
-    # Classification report
     report = classification_report(df['sentiment_label'], df['vader_sentiment'], output_dict=True, zero_division=0)
+    # Prepare data for grouped bar chart
+    metrics = ['precision', 'recall', 'f1-score']
+    sentiments = ['positive', 'neutral', 'negative']
+    metrics_data = {
+        'Sentiment': [],
+        'Metric': [],
+        'Score': []
+    }
+    for sent in sentiments:
+        for metric in metrics:
+            metrics_data['Sentiment'].append(sent.title())
+            metrics_data['Metric'].append(metric.title())
+            metrics_data['Score'].append(report[sent][metric])
+    metrics_df = pd.DataFrame(metrics_data)
+    metrics_fig = px.bar(
+        metrics_df,
+        x='Sentiment',
+        y='Score',
+        color='Metric',
+        barmode='group',
+        text=metrics_df['Score'].apply(lambda x: f"{x:.2f}"),
+        color_discrete_map={'Precision': '#2d7ff9', 'Recall': '#27ae60', 'F1-Score': '#c0392b'},
+        title='Classification Metrics by Sentiment',
+        height=400
+    )
+    metrics_fig.update_traces(textposition='outside', marker_line_width=0)
+    metrics_fig.update_layout(
+        font=dict(size=18),
+        xaxis_title='Sentiment',
+        yaxis_title='Score',
+        yaxis=dict(range=[0, 1]),
+        plot_bgcolor='#f8fafd',
+        paper_bgcolor='#fff',
+        margin=dict(l=40, r=40, t=60, b=40),
+        legend_title_text='',
+        bargap=0.2,
+        title=dict(font=dict(size=22), x=0.5, xanchor='center')
+    )
+    # Use a styled HTML table for metrics
     metrics_table = html.Table([
-        html.Thead(html.Tr([html.Th('Sentiment'), html.Th('Precision'), html.Th('Recall'), html.Th('F1-score')])),
+        html.Thead(html.Tr([
+            html.Th('Sentiment', style={'padding': '10px 24px', 'textAlign': 'center'}),
+            html.Th('Precision', style={'padding': '10px 24px', 'textAlign': 'center'}),
+            html.Th('Recall', style={'padding': '10px 24px', 'textAlign': 'center'}),
+            html.Th('F1-score', style={'padding': '10px 24px', 'textAlign': 'center'})
+        ])),
         html.Tbody([
             html.Tr([
-                html.Td(sent.title()),
-                html.Td(f"{report[sent]['precision']:.2f}"),
-                html.Td(f"{report[sent]['recall']:.2f}"),
-                html.Td(f"{report[sent]['f1-score']:.2f}")
-            ]) for sent in ['positive', 'neutral', 'negative']
+                html.Td(sent.title(), style={'padding': '10px 24px', 'textAlign': 'center', 'fontWeight': '600'}),
+                html.Td(f"{report[sent]['precision']:.2f}", style={'padding': '10px 24px', 'textAlign': 'center'}),
+                html.Td(f"{report[sent]['recall']:.2f}", style={'padding': '10px 24px', 'textAlign': 'center'}),
+                html.Td(f"{report[sent]['f1-score']:.2f}", style={'padding': '10px 24px', 'textAlign': 'center'})
+            ]) for sent in sentiments
         ])
-    ], style={'width': '100%', 'margin': '24px 0', 'borderCollapse': 'collapse', 'fontSize': '1em'})
-    # Example disagreements
-    disagreements = df[df['sentiment_label'] != df['vader_sentiment']].head(5)
+    ], style={'width': '100%', 'margin': '24px 0', 'borderCollapse': 'collapse', 'fontSize': '1.15em', 'background': '#f8fafd', 'borderRadius': '10px'})
+    disagreements = df[df['sentiment_label'] != df['vader_sentiment']]
+    unique_disagreements = disagreements.drop_duplicates(subset=['cleaned_tweets', 'sentiment_label', 'vader_sentiment']).head(10)
     disagreement_divs = []
-    for _, row in disagreements.iterrows():
+    for _, row in unique_disagreements.iterrows():
         disagreement_divs.append(html.Div([
             html.Strong('Tweet: '), html.Span(row['cleaned_tweets'], style={'fontStyle': 'italic', 'color': '#6b7a90'}), html.Br(),
-            html.Span(f"VADER: {row['vader_sentiment']} | Transformer: {row['sentiment_label']}", style={'color': '#c0392b'})
+            html.Span(f"VADER: {row['vader_sentiment']} | Transformer: {row['sentiment_label']}", style={'color': '#c0392b', 'fontWeight': '600'})
         ], style={'marginBottom': '16px', 'padding': '10px', 'background': '#f8fafd', 'borderRadius': '8px'}))
     return html.Div([
         html.H1('Model Comparison', style={'textAlign': 'center'}),
         html.P('Compare VADER and transformer-based sentiment models on the same tweets.', style={'textAlign': 'center', 'marginBottom': '24px'}),
         dcc.Graph(figure=cm_fig),
-        html.H3('Classification Metrics', style={'marginTop': '32px'}),
+        html.H3('Classification Metrics (Graph)', style={'marginTop': '32px'}),
+        dcc.Graph(figure=metrics_fig, config={'displayModeBar': False}),
+        html.H3('Classification Metrics (Table)', style={'marginTop': '32px'}),
         metrics_table,
         html.H3('Example Disagreements', style={'marginTop': '32px'}),
         html.Div(disagreement_divs)
