@@ -393,7 +393,7 @@ def plot_wordcloud(text, title):
         plt.axis('off')
         plt.title(title, fontsize=15, pad=20)
         plt.tight_layout(pad=0)
-        plt.savefig(img, format='png', dpi=300, bbox_inches='tight')
+        plt.savefig(img, format='', dpi=300, bbox_inches='tight')
         plt.close()
         img.seek(0)
         return 'data:image/png;base64,{}'.format(base64.b64encode(img.getvalue()).decode())
