@@ -153,7 +153,12 @@ def topics_layout():
                 style={'width': '300px', 'margin': '0 auto'}
             )
         ], style={'textAlign': 'center', 'marginBottom': '24px'}),
-        html.Div(id='topic-model-output')
+        dcc.Loading(
+            id='topic-loading',
+            type='circle',
+            color='#2d7ff9',
+            children=[html.Div(id='topic-model-output')]
+        )
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def emotions_layout():
@@ -175,8 +180,15 @@ def emotions_layout():
                 style={'marginBottom': '18px'}
             )
         ], style={'textAlign': 'center', 'marginBottom': '18px'}),
-        dcc.Graph(id='emotion-distribution'),
-        html.Div(id='emotion-examples')
+        dcc.Loading(
+            id='emotion-loading',
+            type='circle',
+            color='#2d7ff9',
+            children=[
+                dcc.Graph(id='emotion-distribution'),
+                html.Div(id='emotion-examples')
+            ]
+        )
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def comparison_layout():
@@ -794,9 +806,9 @@ def update_emotion_analysis(start_date, end_date):
     else:
         filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
     tweets = filtered['cleaned_tweets'].dropna().astype(str).tolist()
-    # For speed, sample up to 300 tweets
-    if len(tweets) > 300:
-        tweets = np.random.choice(tweets, 300, replace=False)
+    # For speed, sample up to 100 tweets
+    if len(tweets) > 100:
+        tweets = np.random.choice(tweets, 100, replace=False)
     # Use HuggingFace pipeline for emotion classification
     emotion_pipe = pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base', top_k=1)
     emotion_results = emotion_pipe(tweets)
