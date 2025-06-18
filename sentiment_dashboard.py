@@ -13,6 +13,7 @@ import numpy as np
 from datetime import datetime
 from bertopic import BERTopic
 from transformers import pipeline
+from sklearn.metrics import confusion_matrix, classification_report
 
 # Load the cleaned data with original and VADER sentiments
 # Ensure these files exist after running data_preprocessing.py and sentiment_analysis.py
@@ -179,16 +180,64 @@ def emotions_layout():
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def comparison_layout():
+    # Only show if both sentiment_label and vader_sentiment exist
+    if 'sentiment_label' not in df.columns or 'vader_sentiment' not in df.columns:
+        return html.Div([
+            html.H1('Model Comparison', style={'textAlign': 'center'}),
+            html.P('Both VADER and transformer sentiment labels are required for comparison.', style={'textAlign': 'center', 'color': '#c0392b'})
+        ])
+    # Confusion matrix
+    cm = confusion_matrix(df['sentiment_label'], df['vader_sentiment'], labels=['positive', 'neutral', 'negative'])
+    cm_fig = px.imshow(cm, 
+        x=['positive', 'neutral', 'negative'], 
+        y=['positive', 'neutral', 'negative'],
+        color_continuous_scale='Blues',
+        labels=dict(x='VADER Sentiment', y='Transformer Sentiment', color='Count'),
+        text_auto=True,
+        title='Confusion Matrix: VADER vs. Transformer'
+    )
+    cm_fig.update_layout(plot_bgcolor='#f8fafd', paper_bgcolor='#fff', margin=dict(l=40, r=40, t=60, b=40))
+    # Classification report
+    report = classification_report(df['sentiment_label'], df['vader_sentiment'], output_dict=True, zero_division=0)
+    metrics_table = html.Table([
+        html.Thead(html.Tr([html.Th('Sentiment'), html.Th('Precision'), html.Th('Recall'), html.Th('F1-score')])),
+        html.Tbody([
+            html.Tr([
+                html.Td(sent.title()),
+                html.Td(f"{report[sent]['precision']:.2f}"),
+                html.Td(f"{report[sent]['recall']:.2f}"),
+                html.Td(f"{report[sent]['f1-score']:.2f}")
+            ]) for sent in ['positive', 'neutral', 'negative']
+        ])
+    ], style={'width': '100%', 'margin': '24px 0', 'borderCollapse': 'collapse', 'fontSize': '1em'})
+    # Example disagreements
+    disagreements = df[df['sentiment_label'] != df['vader_sentiment']].head(5)
+    disagreement_divs = []
+    for _, row in disagreements.iterrows():
+        disagreement_divs.append(html.Div([
+            html.Strong('Tweet: '), html.Span(row['cleaned_tweets'], style={'fontStyle': 'italic', 'color': '#6b7a90'}), html.Br(),
+            html.Span(f"VADER: {row['vader_sentiment']} | Transformer: {row['sentiment_label']}", style={'color': '#c0392b'})
+        ], style={'marginBottom': '16px', 'padding': '10px', 'background': '#f8fafd', 'borderRadius': '8px'}))
     return html.Div([
         html.H1('Model Comparison', style={'textAlign': 'center'}),
-        html.P('Compare VADER and transformer-based models here.')
-    ])
+        html.P('Compare VADER and transformer-based sentiment models on the same tweets.', style={'textAlign': 'center', 'marginBottom': '24px'}),
+        dcc.Graph(figure=cm_fig),
+        html.H3('Classification Metrics', style={'marginTop': '32px'}),
+        metrics_table,
+        html.H3('Example Disagreements', style={'marginTop': '32px'}),
+        html.Div(disagreement_divs)
+    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def advanced_layout():
     return html.Div([
         html.H1('Advanced Visualizations', style={'textAlign': 'center'}),
-        html.P('Geographical and network visualizations will go here.')
-    ])
+        html.H2('Geographical Analysis', style={'marginTop': '32px'}),
+        html.P('No location data found. To enable this feature, add a "location", "country", or "coordinates" column to your CSV. Then, you can visualize sentiment by region on a map.', style={'color': '#6b7a90', 'marginBottom': '24px'}),
+        dcc.Graph(figure=go.Figure(), style={'height': '350px', 'background': '#f8fafd', 'borderRadius': '10px', 'marginBottom': '32px'}),
+        html.H2('Network Graphs', style={'marginTop': '32px'}),
+        html.P('No retweet, reply, or hashtag data found. To enable this feature, add columns for retweet/reply/hashtag relationships to your CSV. Then, you can visualize tweet networks.', style={'color': '#6b7a90', 'marginBottom': '24px'}),
+        dcc.Graph(figure=go.Figure(), style={'height': '350px', 'background': '#f8fafd', 'borderRadius': '10px'}),
+    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 # Callback for page routing
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
