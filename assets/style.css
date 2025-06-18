@@ -1,35 +1,42 @@
 /* Main container styles */
 body {
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f7fa;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
+    background-color: #f6f8fa;
     margin: 0;
-    padding: 20px;
+    padding: 0;
 }
 
 /* Metric boxes */
 .metric-box {
-    background-color: #fff;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(34,48,74,0.06);
+    border: 1px solid #e3e7ee;
     padding: 28px 18px 18px 18px;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+    margin: 0 10px 0 0;
     width: 22%;
     text-align: center;
-    border: 1px solid #e1e4ea;
-    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.metric-box:last-child {
+    margin-right: 0;
 }
 
 .metric-box h3 {
-    margin: 0;
-    color: #7f8c8d;
-    font-size: 1.08em;
+    color: #6b7a90;
+    font-size: 1em;
     font-weight: 500;
-    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
 .metric-box h2 {
-    margin: 10px 0 0 0;
     font-size: 2.1em;
     font-weight: 700;
+    color: #22304a;
+    margin: 0;
 }
 
 /* Graph containers */
@@ -43,35 +50,73 @@ div[class*="graph-container"], .wordcloud-container {
 }
 
 /* Dropdown styles */
-.Select-control {
-    border-radius: 6px !important;
-    border: 1px solid #dcdde1 !important;
+.Select-control, .Select {
+    border-radius: 7px !important;
+    border: 1px solid #d1d7e0 !important;
     font-size: 1em;
+    background: #f8fafd !important;
+    color: #22304a !important;
 }
 
 /* Headers */
 h1, h2, h3 {
-    color: #34495e;
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #22304a;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
+    font-weight: 600;
 }
 
 h1 {
-    font-size: 2.6em;
-    margin-bottom: 32px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-size: 2.4em;
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
 }
 
 h2 {
-    font-size: 1.5em;
-    margin-bottom: 18px;
+    font-size: 1.4em;
+    margin-bottom: 16px;
     font-weight: 600;
+}
+
+h3 {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    font-weight: 500;
 }
 
 hr {
     border: none;
-    border-top: 1px solid #e1e4ea;
+    border-top: 1px solid #e3e7ee;
     margin: 32px 0;
+}
+
+/* Card containers for sections */
+.section-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(34,48,74,0.06);
+    border: 1px solid #e3e7ee;
+    padding: 32px 28px;
+    margin-bottom: 32px;
+}
+
+/* AI Insights box */
+#ai-insights-box {
+    background: #f8fafd;
+    border-radius: 12px;
+    border: 1px solid #e3e7ee;
+    box-shadow: 0 2px 10px rgba(34,48,74,0.04);
+    padding: 24px 32px;
+    color: #22304a;
+    font-size: 1.08em;
+    max-width: 900px;
+    margin: 0 auto 36px auto;
+}
+
+label {
+    color: #22304a;
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: block;
 }
 
 /* Responsive design */
@@ -80,10 +125,17 @@ hr {
         width: 48%;
         margin-bottom: 20px;
     }
+    .section-card {
+        padding: 18px 8px;
+    }
 }
 
 @media (max-width: 768px) {
     .metric-box {
         width: 100%;
+        margin-bottom: 18px;
+    }
+    .section-card {
+        padding: 10px 2px;
     }
 } 

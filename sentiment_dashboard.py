@@ -99,25 +99,13 @@ def get_word_frequencies(text, n=20):
 # Layout of the dashboard
 app.layout = html.Div([
     html.H1('X Sentiment Analysis Dashboard', 
-            style={'textAlign': 'center', 'color': '#2c3e50', 'marginBottom': '30px'}),
+            style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
     
     # AI Insights Box
     html.Div([
         html.H2('AI Insights', style={'textAlign': 'center', 'color': '#34495e', 'letterSpacing': '1px', 'fontWeight': '600'}),
-        html.Div(id='ai-insights-box', style={
-            'backgroundColor': '#f4f6fa',
-            'borderRadius': '12px',
-            'padding': '28px',
-            'marginBottom': '36px',
-            'fontSize': '1.08em',
-            'color': '#222',
-            'boxShadow': '0 2px 12px rgba(44,62,80,0.07)',
-            'border': '1px solid #e1e4ea',
-            'maxWidth': '900px',
-            'marginLeft': 'auto',
-            'marginRight': 'auto',
-        })
-    ]),
+        html.Div(id='ai-insights-box')
+    ], className='section-card'),
     
     # Filters
     html.Div([
@@ -147,13 +135,13 @@ app.layout = html.Div([
                 style={'width': '100%'}
             )
         ], style={'width': '30%', 'display': 'inline-block'})
-    ], style={'marginBottom': '30px', 'padding': '20px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px'}),
+    ], className='section-card', style={'marginBottom': '30px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px', 'border': 'none'}),
     
     # Main metrics
     html.Div([
         html.Div([
             html.H3('Total Tweets', style={'textAlign': 'center'}),
-            html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#2c3e50'})
+            html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#22304a'})
         ], className='metric-box'),
         html.Div([
             html.H3('Positive Tweets', style={'textAlign': 'center'}),
@@ -179,7 +167,7 @@ app.layout = html.Div([
             html.H2('Sentiment Over Time', style={'textAlign': 'center'}),
             dcc.Graph(id='sentiment-timeline')
         ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ], style={'marginBottom': '30px'}),
+    ], className='section-card'),
     
     # Word Clouds Section
     html.Div([
@@ -198,7 +186,7 @@ app.layout = html.Div([
                 html.Img(id='neutral-wordcloud', style={'width': '100%'})
             ], style={'width': '32%', 'display': 'inline-block'})
         ])
-    ], style={'marginBottom': '30px', 'padding': '20px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px'}),
+    ], className='section-card'),
     
     # Word Frequency Analysis
     html.Div([
@@ -217,7 +205,15 @@ app.layout = html.Div([
                 dcc.Graph(id='neutral-words')
             ], style={'width': '32%', 'display': 'inline-block'})
         ])
-    ], style={'marginBottom': '30px', 'padding': '20px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px'})
+    ], className='section-card'),
+
+    # Unified AI Insights Section
+    html.Div([
+        html.H2('AI Insights', style={'textAlign': 'center', 'marginBottom': '20px'}),
+        dcc.Graph(id='ai-insights-line-chart'),
+        html.Hr(style={'margin': '32px 0', 'borderTop': '1px solid #e3e7ee'}),
+        html.Div(id='ai-insights-box')
+    ], className='section-card', style={'maxWidth': '950px', 'margin': '0 auto 36px auto', 'background': '#f8fafd'})
 ])
 
 # Callback for updating metrics
@@ -478,6 +474,45 @@ def update_ai_insights(sentiment_type, time_period):
         ], style={'marginBottom': '12px'}),
         anomaly_text if anomaly_text else None
     ])
+
+# Callback for AI Insights Line Chart
+@callback(
+    Output('ai-insights-line-chart', 'figure'),
+    [Input('sentiment-type', 'value'),
+     Input('time-period', 'value')]
+)
+def update_ai_insights_line_chart(sentiment_type, time_period):
+    sentiment_col = 'sentiment_label' if sentiment_type == 'original' else 'vader_sentiment'
+    if time_period != 'all' and 'date' in df.columns:
+        if time_period == 'month':
+            filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(months=1))]
+        else:  # week
+            filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(weeks=1))]
+    else:
+        filtered_df = df
+    if 'date' not in filtered_df.columns or filtered_df.empty:
+        return go.Figure()
+    # Group by month and sentiment
+    timeline_data = filtered_df.groupby([filtered_df['date'].dt.to_period('M').dt.to_timestamp(), sentiment_col]).size().reset_index(name='count')
+    fig = px.line(
+        timeline_data,
+        x='date',
+        y='count',
+        color=sentiment_col,
+        title='Sentiment Trends Over Time',
+        labels={'date': 'Date', 'count': 'Number of Tweets'},
+        color_discrete_map={'positive': '#27ae60', 'negative': '#c0392b', 'neutral': '#3498db'}
+    )
+    fig.update_layout(
+        xaxis_title='Date',
+        yaxis_title='Number of Tweets',
+        hovermode='x unified',
+        legend_title_text='Sentiment',
+        plot_bgcolor='#f8fafd',
+        paper_bgcolor='#fff',
+        margin=dict(l=40, r=40, t=60, b=40)
+    )
+    return fig
 
 if __name__ == '__main__':
     print("\n--- Starting Dashboard ---")
