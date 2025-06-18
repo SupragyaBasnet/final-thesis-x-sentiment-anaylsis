@@ -101,12 +101,6 @@ app.layout = html.Div([
     html.H1('X Sentiment Analysis Dashboard', 
             style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
     
-    # AI Insights Box
-    html.Div([
-        html.H2('AI Insights', style={'textAlign': 'center', 'color': '#34495e', 'letterSpacing': '1px', 'fontWeight': '600'}),
-        html.Div(id='ai-insights-box')
-    ], className='section-card'),
-    
     # Filters
     html.Div([
         html.Div([
