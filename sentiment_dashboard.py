@@ -103,15 +103,19 @@ app.layout = html.Div([
     
     # AI Insights Box
     html.Div([
-        html.H2('AI Insights', style={'textAlign': 'center', 'color': '#8e44ad'}),
+        html.H2('AI Insights', style={'textAlign': 'center', 'color': '#34495e', 'letterSpacing': '1px', 'fontWeight': '600'}),
         html.Div(id='ai-insights-box', style={
-            'backgroundColor': '#f3e6fa',
-            'borderRadius': '10px',
-            'padding': '20px',
-            'marginBottom': '30px',
-            'fontSize': '1.15em',
-            'color': '#2c3e50',
-            'boxShadow': '0 2px 8px rgba(142,68,173,0.08)'
+            'backgroundColor': '#f4f6fa',
+            'borderRadius': '12px',
+            'padding': '28px',
+            'marginBottom': '36px',
+            'fontSize': '1.08em',
+            'color': '#222',
+            'boxShadow': '0 2px 12px rgba(44,62,80,0.07)',
+            'border': '1px solid #e1e4ea',
+            'maxWidth': '900px',
+            'marginLeft': 'auto',
+            'marginRight': 'auto',
         })
     ]),
     
@@ -423,17 +427,17 @@ def update_ai_insights(sentiment_type, time_period):
                 if sent in last_month and sent in prev_month:
                     diff = last_month[sent] - prev_month[sent]
                     if diff > 0:
-                        trend_parts.append(f"{sent.title()} sentiment increased by {diff} compared to previous month.")
+                        trend_parts.append(f"{sent.title()}: ▲ {diff} (increase)")
                     elif diff < 0:
-                        trend_parts.append(f"{sent.title()} sentiment decreased by {abs(diff)} compared to previous month.")
+                        trend_parts.append(f"{sent.title()}: ▼ {abs(diff)} (decrease)")
             if trend_parts:
-                trend_text = " ".join(trend_parts)
+                trend_text = html.Ul([html.Li(t) for t in trend_parts])
             else:
-                trend_text = "Sentiment levels remained stable compared to the previous month."
+                trend_text = html.Div("Sentiment levels remained stable compared to the previous month.")
         else:
-            trend_text = "Not enough data for trend analysis."
+            trend_text = html.Div("Not enough data for trend analysis.")
     else:
-        trend_text = "No date information available for trend analysis."
+        trend_text = html.Div("No date information available for trend analysis.")
     
     # Most influential words
     def top_words(sentiment):
@@ -453,11 +457,27 @@ def update_ai_insights(sentiment_type, time_period):
             std = monthly_total.std()
             spikes = monthly_total[monthly_total > mean + 2*std]
             if not spikes.empty:
-                anomaly_text = f"Unusual spike(s) in tweet volume detected in: {', '.join([d.strftime('%b %Y') for d in spikes.index])}. "
+                anomaly_text = html.Div([
+                    html.Strong("Notable Activity: "),
+                    f"Unusual spike(s) in tweet volume detected in: {', '.join([d.strftime('%b %Y') for d in spikes.index])}."
+                ])
     
     # Compose the insight
-    insight = f"{trend_text} Top positive words: {top_pos}. Top negative words: {top_neg}. Top neutral words: {top_neu}. {anomaly_text}"
-    return insight
+    return html.Div([
+        html.Div([
+            html.Strong("Sentiment Change (Last Month): "),
+            trend_text
+        ], style={'marginBottom': '12px'}),
+        html.Div([
+            html.Strong("Key Drivers: "),
+            html.Ul([
+                html.Li(f"Top Positive Words: {top_pos}"),
+                html.Li(f"Top Negative Words: {top_neg}"),
+                html.Li(f"Top Neutral Words: {top_neu}")
+            ])
+        ], style={'marginBottom': '12px'}),
+        anomaly_text if anomaly_text else None
+    ])
 
 if __name__ == '__main__':
     print("\n--- Starting Dashboard ---")
