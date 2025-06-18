@@ -68,10 +68,73 @@ def overview_layout():
     ])
 
 def explorer_layout():
+    columns = []
+    if 'cleaned_tweets' in df.columns:
+        columns.append({'name': 'Tweet', 'id': 'cleaned_tweets'})
+    if 'date' in df.columns:
+        columns.append({'name': 'Date', 'id': 'date'})
+    if 'sentiment_label' in df.columns:
+        columns.append({'name': 'Original Sentiment', 'id': 'sentiment_label'})
+    if 'vader_sentiment' in df.columns:
+        columns.append({'name': 'VADER Sentiment', 'id': 'vader_sentiment'})
+    min_date = df['date'].min().date() if 'date' in df.columns else None
+    max_date = df['date'].max().date() if 'date' in df.columns else None
     return html.Div([
         html.H1('Tweet Explorer', style={'textAlign': 'center'}),
-        html.P('A searchable, filterable table of tweets will go here.')
-    ])
+        html.P('Search, filter, and explore individual tweets with their sentiment and date.', style={'textAlign': 'center', 'marginBottom': '24px'}),
+        html.Div([
+            html.Label('Select Date Range:'),
+            dcc.DatePickerRange(
+                id='explorer-date-range',
+                min_date_allowed=min_date,
+                max_date_allowed=max_date,
+                start_date=min_date,
+                end_date=max_date,
+                display_format='YYYY-MM-DD',
+                style={'marginBottom': '18px'}
+            ),
+            html.Button('Download CSV', id='download-csv-btn', n_clicks=0, style={'marginLeft': '24px', 'padding': '8px 18px', 'fontWeight': '600', 'borderRadius': '7px', 'background': '#22304a', 'color': '#fff', 'border': 'none', 'fontSize': '1em', 'cursor': 'pointer'}),
+            dcc.Download(id='download-csv')
+        ], style={'textAlign': 'center', 'marginBottom': '18px'}),
+        dash_table.DataTable(
+            id='tweet-table',
+            columns=columns,
+            data=[],  # Will be filled by callback
+            page_size=15,
+            filter_action='native',
+            sort_action='native',
+            style_table={'overflowX': 'auto', 'margin': '0 auto', 'maxWidth': '1100px'},
+            style_cell={
+                'fontFamily': 'Inter, Segoe UI, Roboto, Arial, sans-serif',
+                'fontSize': '1em',
+                'padding': '10px',
+                'backgroundColor': '#fff',
+                'color': '#22304a',
+                'border': '1px solid #e3e7ee',
+                'maxWidth': '400px',
+                'whiteSpace': 'normal',
+            },
+            style_header={
+                'backgroundColor': '#f6f8fa',
+                'fontWeight': 'bold',
+                'color': '#22304a',
+                'borderBottom': '2px solid #e3e7ee',
+            },
+            style_data_conditional=[
+                {
+                    'if': {'column_id': 'sentiment_label'},
+                    'backgroundColor': '#eafaf1',
+                    'color': '#27ae60',
+                },
+                {
+                    'if': {'column_id': 'vader_sentiment'},
+                    'backgroundColor': '#fbeee6',
+                    'color': '#c0392b',
+                },
+            ],
+            style_as_list_view=True,
+        )
+    ], style={'maxWidth': '1200px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def topics_layout():
     return html.Div([
@@ -578,6 +641,36 @@ def update_ai_insights_line_chart(sentiment_type, time_period):
         margin=dict(l=40, r=40, t=60, b=40)
     )
     return fig
+
+# Callback to update tweet table based on date range
+@app.callback(
+    Output('tweet-table', 'data'),
+    [Input('explorer-date-range', 'start_date'),
+     Input('explorer-date-range', 'end_date')]
+)
+def update_tweet_table(start_date, end_date):
+    if not start_date or not end_date:
+        filtered = df
+    else:
+        filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
+    return filtered.head(1000).to_dict('records')
+
+# Callback to download filtered data as CSV
+@app.callback(
+    Output('download-csv', 'data'),
+    [Input('download-csv-btn', 'n_clicks'),
+     Input('explorer-date-range', 'start_date'),
+     Input('explorer-date-range', 'end_date')],
+    prevent_initial_call=True
+)
+def download_csv(n_clicks, start_date, end_date):
+    if not n_clicks:
+        return None
+    if not start_date or not end_date:
+        filtered = df
+    else:
+        filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
+    return dcc.send_data_frame(filtered.to_csv, 'filtered_tweets.csv', index=False)
 
 if __name__ == '__main__':
     print("\n--- Starting Multi-Page Dashboard ---")
