@@ -11,6 +11,8 @@ import base64
 from collections import Counter
 import numpy as np
 from datetime import datetime
+from bertopic import BERTopic
+from transformers import pipeline
 
 # Load the cleaned data with original and VADER sentiments
 # Ensure these files exist after running data_preprocessing.py and sentiment_analysis.py
@@ -137,16 +139,44 @@ def explorer_layout():
     ], style={'maxWidth': '1200px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def topics_layout():
+    sentiments = ['positive', 'negative', 'neutral']
     return html.Div([
         html.H1('Topic Modeling', style={'textAlign': 'center'}),
-        html.P('Trending topics by sentiment will go here.')
-    ])
+        html.P('Discover trending topics within each sentiment using BERTopic.', style={'textAlign': 'center', 'marginBottom': '24px'}),
+        html.Div([
+            html.Label('Select Sentiment:'),
+            dcc.Dropdown(
+                id='topic-sentiment-dropdown',
+                options=[{'label': s.title(), 'value': s} for s in sentiments],
+                value='positive',
+                style={'width': '300px', 'margin': '0 auto'}
+            )
+        ], style={'textAlign': 'center', 'marginBottom': '24px'}),
+        html.Div(id='topic-model-output')
+    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def emotions_layout():
+    emotions = ['joy', 'anger', 'fear', 'sadness', 'surprise', 'love', 'neutral']
+    min_date = df['date'].min().date() if 'date' in df.columns else None
+    max_date = df['date'].max().date() if 'date' in df.columns else None
     return html.Div([
         html.H1('Emotion Analysis', style={'textAlign': 'center'}),
-        html.P('Emotion detection and visualization will go here.')
-    ])
+        html.P('Analyze the emotional tone of tweets using a pre-trained AI model.', style={'textAlign': 'center', 'marginBottom': '24px'}),
+        html.Div([
+            html.Label('Select Date Range:'),
+            dcc.DatePickerRange(
+                id='emotion-date-range',
+                min_date_allowed=min_date,
+                max_date_allowed=max_date,
+                start_date=min_date,
+                end_date=max_date,
+                display_format='YYYY-MM-DD',
+                style={'marginBottom': '18px'}
+            )
+        ], style={'textAlign': 'center', 'marginBottom': '18px'}),
+        dcc.Graph(id='emotion-distribution'),
+        html.Div(id='emotion-examples')
+    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
 def comparison_layout():
     return html.Div([
@@ -671,6 +701,80 @@ def download_csv(n_clicks, start_date, end_date):
     else:
         filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
     return dcc.send_data_frame(filtered.to_csv, 'filtered_tweets.csv', index=False)
+
+# Callback to run BERTopic and display topics for selected sentiment
+@app.callback(
+    Output('topic-model-output', 'children'),
+    [Input('topic-sentiment-dropdown', 'value')]
+)
+def update_topic_model(selected_sentiment):
+    # Filter tweets by sentiment
+    tweets = df[df['sentiment_label'] == selected_sentiment]['cleaned_tweets'].dropna().astype(str).tolist()
+    if not tweets or len(tweets) < 20:
+        return html.Div('Not enough tweets for topic modeling.', style={'textAlign': 'center', 'color': '#c0392b'})
+    # For speed, sample up to 2000 tweets
+    if len(tweets) > 2000:
+        tweets = np.random.choice(tweets, 2000, replace=False)
+    # Fit BERTopic (cache for session if possible)
+    topic_model = BERTopic(verbose=False)
+    topics, probs = topic_model.fit_transform(tweets)
+    topic_info = topic_model.get_topic_info().head(10)
+    topic_keywords = [topic_model.get_topic(i) for i in topic_info['Topic'] if i != -1]
+    topic_divs = []
+    for idx, row in topic_info.iterrows():
+        if row['Topic'] == -1:
+            continue
+        words = ', '.join([w for w, _ in topic_model.get_topic(row['Topic'])])
+        example_idx = np.where(np.array(topics) == row['Topic'])[0]
+        example_tweet = tweets[example_idx[0]] if len(example_idx) > 0 else ''
+        topic_divs.append(html.Div([
+            html.H4(f"Topic {row['Topic']+1}: {words}", style={'marginBottom': '6px', 'color': '#22304a'}),
+            html.P(f"Example Tweet: {example_tweet}", style={'fontStyle': 'italic', 'color': '#6b7a90', 'marginBottom': '18px'})
+        ], style={'marginBottom': '18px', 'padding': '12px', 'background': '#f8fafd', 'borderRadius': '8px'}))
+    return html.Div(topic_divs)
+
+# Callback to run emotion analysis and display results
+@app.callback(
+    [Output('emotion-distribution', 'figure'), Output('emotion-examples', 'children')],
+    [Input('emotion-date-range', 'start_date'), Input('emotion-date-range', 'end_date')]
+)
+def update_emotion_analysis(start_date, end_date):
+    # Filter tweets by date
+    if not start_date or not end_date:
+        filtered = df
+    else:
+        filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
+    tweets = filtered['cleaned_tweets'].dropna().astype(str).tolist()
+    # For speed, sample up to 300 tweets
+    if len(tweets) > 300:
+        tweets = np.random.choice(tweets, 300, replace=False)
+    # Use HuggingFace pipeline for emotion classification
+    emotion_pipe = pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base', top_k=1)
+    emotion_results = emotion_pipe(tweets)
+    emotions = [res[0]['label'] for res in emotion_results]
+    # Distribution chart
+    emotion_counts = pd.Series(emotions).value_counts().sort_values(ascending=False)
+    fig = px.bar(
+        emotion_counts,
+        x=emotion_counts.index,
+        y=emotion_counts.values,
+        labels={'x': 'Emotion', 'y': 'Number of Tweets'},
+        title='Emotion Distribution',
+        color=emotion_counts.index,
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig.update_layout(xaxis_title='Emotion', yaxis_title='Number of Tweets', plot_bgcolor='#f8fafd', paper_bgcolor='#fff')
+    # Example tweets for each emotion
+    example_divs = []
+    for emotion in emotion_counts.index:
+        idx = [i for i, e in enumerate(emotions) if e == emotion]
+        if idx:
+            example_tweet = tweets[idx[0]]
+            example_divs.append(html.Div([
+                html.Strong(f"{emotion.title()}: "),
+                html.Span(example_tweet, style={'fontStyle': 'italic', 'color': '#6b7a90'})
+            ], style={'marginBottom': '12px'}))
+    return fig, html.Div(example_divs)
 
 if __name__ == '__main__':
     print("\n--- Starting Multi-Page Dashboard ---")
