@@ -47,18 +47,27 @@ except FileNotFoundError as e:
 
 app = Dash(__name__, suppress_callback_exceptions=True)
 
-# Navigation bar
-navbar = html.Nav([
-    dcc.Link('Overview', href='/', className='nav-link'),
-    dcc.Link('Tweet Explorer', href='/explorer', className='nav-link'),
-    dcc.Link('Topic Modeling', href='/topics', className='nav-link'),
-    dcc.Link('Model Comparison', href='/comparison', className='nav-link'),
-], className='navbar')
+# Navigation bar (now a function for active link highlighting)
+def navbar(pathname):
+    def link(label, href):
+        is_active = (pathname == href) or (href == '/' and pathname == '')
+        return dcc.Link(
+            label,
+            href=href,
+            className='nav-link active-link' if is_active else 'nav-link',
+            style={'marginRight': '18px'}
+        )
+    return html.Nav([
+        link('Overview', '/'),
+        link('Tweet Explorer', '/explorer'),
+        link('Topic Modeling', '/topics'),
+        link('Model Comparison', '/comparison'),
+    ], className='navbar')
 
 # App layout with location
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    navbar,
+    html.Div(id='navbar-container'),
     html.Div(id='page-content')
 ])
 
@@ -359,17 +368,20 @@ def comparison_layout():
         html.Div(disagreement_divs)
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
-# Callback for page routing
-@app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
-def display_page(pathname):
+# Callback for page routing and navbar
+@app.callback(
+    [Output('page-content', 'children'), Output('navbar-container', 'children')],
+    [Input('url', 'pathname')]
+)
+def display_page_and_navbar(pathname):
     if pathname == '/explorer':
-        return explorer_layout()
+        return explorer_layout(), navbar(pathname)
     elif pathname == '/topics':
-        return topics_layout()
+        return topics_layout(), navbar(pathname)
     elif pathname == '/comparison':
-        return comparison_layout()
+        return comparison_layout(), navbar(pathname)
     else:
-        return overview_layout()
+        return overview_layout(), navbar(pathname)
 
 # Function to generate word cloud as a base64 encoded image
 def plot_wordcloud(text, title):
@@ -393,7 +405,7 @@ def plot_wordcloud(text, title):
         plt.axis('off')
         plt.title(title, fontsize=15, pad=20)
         plt.tight_layout(pad=0)
-        plt.savefig(img, format='', dpi=300, bbox_inches='tight')
+        plt.savefig(img, format='png', dpi=300, bbox_inches='tight')
         plt.close()
         img.seek(0)
         return 'data:image/png;base64,{}'.format(base64.b64encode(img.getvalue()).decode())

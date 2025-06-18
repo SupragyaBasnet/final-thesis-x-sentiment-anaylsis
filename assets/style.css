@@ -145,29 +145,37 @@ label {
 }
 
 .navbar {
-    background: #fff;
-    border-bottom: 1px solid #e3e7ee;
-    padding: 18px 0 10px 0;
-    margin-bottom: 32px;
-    box-shadow: 0 2px 10px rgba(34,48,74,0.03);
     display: flex;
-    justify-content: center;
-    gap: 32px;
+    align-items: center;
+    background: #fff;
+    padding: 18px 32px 10px 32px;
+    border-bottom: 1.5px solid #e3e7ee;
+    margin-bottom: 18px;
 }
+
 .nav-link {
     color: #22304a;
     text-decoration: none;
-    padding: 10px 22px;
-    border-radius: 8px;
+    font-size: 1.18em;
     font-weight: 500;
-    font-size: 1.08em;
+    padding: 8px 18px;
+    border-radius: 7px;
     transition: background 0.2s, color 0.2s;
-    margin: 0 2px;
+    margin-right: 8px;
 }
-.nav-link:hover, .nav-link.active {
-    background: #eaf0fb;
+
+.nav-link:hover {
+    background: #f0f4fa;
     color: #2d7ff9;
-    text-decoration: none;
+}
+
+.active-link {
+    background: #2d7ff9;
+    color: #fff !important;
+    font-weight: 700;
+    border-radius: 7px;
+    box-shadow: 0 2px 8px rgba(45,127,249,0.08);
+    text-decoration: underline 3px #fff;
 }
 
 button, .dash-table-container .dash-spreadsheet-container button {
