@@ -11,7 +11,7 @@ body {
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 2px 8px rgba(34,48,74,0.04);
-    border: 1px solid #e3e7ee;
+    border: none;
     padding: 28px 18px 18px 18px;
     margin: 0 10px 0 0;
     width: 22%;
@@ -51,34 +51,35 @@ div[class*="graph-container"], .wordcloud-container {
 
 /* Dropdown styles */
 .Select-control, .Select {
-    border-radius: 7px !important;
-    border: 1px solid #d1d7e0 !important;
+    border-radius: 8px !important;
+    border: 1px solid #e3e7ee !important;
     font-size: 1em;
     background: #f8fafd !important;
     color: #22304a !important;
+    box-shadow: none !important;
 }
 
 /* Headers */
 h1, h2, h3 {
     color: #22304a;
     font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 h1 {
-    font-size: 2.2em;
+    font-size: 2.3em;
     margin-bottom: 24px;
     letter-spacing: 0.5px;
 }
 
 h2 {
-    font-size: 1.3em;
+    font-size: 1.4em;
     margin-bottom: 14px;
     font-weight: 600;
 }
 
 h3 {
-    font-size: 1.08em;
+    font-size: 1.1em;
     margin-bottom: 8px;
     font-weight: 500;
 }
@@ -92,11 +93,11 @@ hr {
 /* Card containers for sections */
 .section-card {
     background: #fff;
-    border-radius: 16px;
+    border-radius: 18px;
     box-shadow: 0 2px 8px rgba(34,48,74,0.04);
-    border: 1px solid #e3e7ee;
-    padding: 36px 32px 32px 32px;
-    margin-bottom: 36px;
+    border: none;
+    padding: 40px 36px 36px 36px;
+    margin-bottom: 40px;
     max-width: 950px;
     margin-left: auto;
     margin-right: auto;
@@ -106,7 +107,7 @@ hr {
 #ai-insights-box {
     background: #f8fafd;
     border-radius: 12px;
-    border: 1px solid #e3e7ee;
+    border: none;
     box-shadow: 0 2px 8px rgba(34,48,74,0.04);
     padding: 24px 32px;
     color: #22304a;
@@ -117,7 +118,7 @@ hr {
 
 label {
     color: #22304a;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 4px;
     display: block;
 }
@@ -167,4 +168,29 @@ label {
     background: #eaf0fb;
     color: #2d7ff9;
     text-decoration: none;
+}
+
+button, .dash-table-container .dash-spreadsheet-container button {
+    background: #2d7ff9;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    box-shadow: 0 1px 4px rgba(34,48,74,0.04);
+}
+button:hover, .dash-table-container .dash-spreadsheet-container button:hover {
+    background: #174ea6;
+    color: #fff;
+}
+.dash-table-container .dash-spreadsheet-container {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(34,48,74,0.04);
+    border: none;
+}
+.dash-table-container .dash-spreadsheet-container th, .dash-table-container .dash-spreadsheet-container td {
+    border: none !important;
 } 

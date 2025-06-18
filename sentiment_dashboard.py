@@ -53,8 +53,7 @@ navbar = html.Nav([
     dcc.Link('Topic Modeling', href='/topics', className='nav-link'),
     dcc.Link('Emotion Analysis', href='/emotions', className='nav-link'),
     dcc.Link('Model Comparison', href='/comparison', className='nav-link'),
-    dcc.Link('Advanced Visualizations', href='/advanced', className='nav-link'),
-], className='navbar', style={'display': 'flex', 'gap': '32px', 'justifyContent': 'center', 'marginBottom': '32px', 'fontWeight': '600', 'fontSize': '1.1em'})
+], className='navbar')
 
 # App layout with location
 app.layout = html.Div([
@@ -66,8 +65,114 @@ app.layout = html.Div([
 # Page layouts (stubs for now)
 def overview_layout():
     return html.Div([
-        html.H1('X Sentiment Analysis Dashboard', style={'textAlign': 'center'}),
-        html.P('Welcome to the Overview page. (All your main charts and insights will go here.)', style={'textAlign': 'center'})
+        html.H1('X Sentiment Analysis Dashboard', 
+                style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
+        
+        # Filters
+        html.Div([
+            html.Div([
+                html.Label('Select Sentiment Type:'),
+                dcc.Dropdown(
+                    id='sentiment-type',
+                    options=[
+                        {'label': 'Original Labels', 'value': 'original'},
+                        {'label': 'VADER Labels', 'value': 'vader'}
+                    ],
+                    value='original',
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '20px'}),
+            
+            html.Div([
+                html.Label('Select Time Period:'),
+                dcc.Dropdown(
+                    id='time-period',
+                    options=[
+                        {'label': 'All Time', 'value': 'all'},
+                        {'label': 'Last Month', 'value': 'month'},
+                        {'label': 'Last Week', 'value': 'week'}
+                    ],
+                    value='all',
+                    style={'width': '100%'}
+                )
+            ], style={'width': '30%', 'display': 'inline-block'})
+        ], className='section-card', style={'marginBottom': '30px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px', 'border': 'none'}),
+        
+        # Main metrics
+        html.Div([
+            html.Div([
+                html.H3('Total Tweets', style={'textAlign': 'center'}),
+                html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#22304a'})
+            ], className='metric-box'),
+            html.Div([
+                html.H3('Positive Tweets', style={'textAlign': 'center'}),
+                html.H2(id='positive-tweets', style={'textAlign': 'center', 'color': '#27ae60'})
+            ], className='metric-box'),
+            html.Div([
+                html.H3('Negative Tweets', style={'textAlign': 'center'}),
+                html.H2(id='negative-tweets', style={'textAlign': 'center', 'color': '#c0392b'})
+            ], className='metric-box'),
+            html.Div([
+                html.H3('Neutral Tweets', style={'textAlign': 'center'}),
+                html.H2(id='neutral-tweets', style={'textAlign': 'center', 'color': '#3498db'})
+            ], className='metric-box')
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+        
+        # Sentiment Distribution and Sentiment Over Time
+        html.Div([
+            html.Div([
+                html.H2('Sentiment Distribution', style={'textAlign': 'center'}),
+                dcc.Graph(id='sentiment-distribution')
+            ], style={'width': '48%', 'display': 'inline-block'}),
+            html.Div([
+                html.H2('Sentiment Over Time', style={'textAlign': 'center'}),
+                dcc.Graph(id='sentiment-timeline')
+            ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+        ], className='section-card'),
+        
+        # Word Clouds Section
+        html.Div([
+            html.H2('Word Clouds Analysis', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.Div([
+                html.Div([
+                    html.H3('Positive Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='positive-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Negative Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='negative-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Neutral Sentiment', style={'textAlign': 'center'}),
+                    html.Img(id='neutral-wordcloud', style={'width': '100%'})
+                ], style={'width': '32%', 'display': 'inline-block'})
+            ])
+        ], className='section-card'),
+        
+        # Word Frequency Analysis
+        html.Div([
+            html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.Div([
+                html.Div([
+                    html.H3('Positive Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='positive-words')
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Negative Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='negative-words')
+                ], style={'width': '32%', 'display': 'inline-block'}),
+                html.Div([
+                    html.H3('Neutral Words', style={'textAlign': 'center'}),
+                    dcc.Graph(id='neutral-words')
+                ], style={'width': '32%', 'display': 'inline-block'})
+            ])
+        ], className='section-card'),
+
+        # Unified AI Insights Section
+        html.Div([
+            html.H2('AI Insights', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.Div(id='ai-insights-box')
+        ], className='section-card', style={'maxWidth': '950px', 'margin': '0 auto 36px auto', 'background': '#f8fafd'})
     ])
 
 def explorer_layout():
@@ -240,17 +345,6 @@ def comparison_layout():
         html.Div(disagreement_divs)
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
-def advanced_layout():
-    return html.Div([
-        html.H1('Advanced Visualizations', style={'textAlign': 'center'}),
-        html.H2('Geographical Analysis', style={'marginTop': '32px'}),
-        html.P('No location data found. To enable this feature, add a "location", "country", or "coordinates" column to your CSV. Then, you can visualize sentiment by region on a map.', style={'color': '#6b7a90', 'marginBottom': '24px'}),
-        dcc.Graph(figure=go.Figure(), style={'height': '350px', 'background': '#f8fafd', 'borderRadius': '10px', 'marginBottom': '32px'}),
-        html.H2('Network Graphs', style={'marginTop': '32px'}),
-        html.P('No retweet, reply, or hashtag data found. To enable this feature, add columns for retweet/reply/hashtag relationships to your CSV. Then, you can visualize tweet networks.', style={'color': '#6b7a90', 'marginBottom': '24px'}),
-        dcc.Graph(figure=go.Figure(), style={'height': '350px', 'background': '#f8fafd', 'borderRadius': '10px'}),
-    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
-
 # Callback for page routing
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
 def display_page(pathname):
@@ -262,8 +356,6 @@ def display_page(pathname):
         return emotions_layout()
     elif pathname == '/comparison':
         return comparison_layout()
-    elif pathname == '/advanced':
-        return advanced_layout()
     else:
         return overview_layout()
 
@@ -319,121 +411,6 @@ wc_neutral_vader = plot_wordcloud(neutral_tweets_vader, 'Word Cloud: Neutral AI 
 def get_word_frequencies(text, n=20):
     words = text.lower().split()
     return Counter(words).most_common(n)
-
-# Layout of the dashboard
-def overview_layout():
-    return html.Div([
-        html.H1('X Sentiment Analysis Dashboard', 
-                style={'textAlign': 'center', 'color': '#22304a', 'marginBottom': '30px', 'fontWeight': '700', 'letterSpacing': '0.5px'}),
-        
-        # Filters
-        html.Div([
-            html.Div([
-                html.Label('Select Sentiment Type:'),
-                dcc.Dropdown(
-                    id='sentiment-type',
-                    options=[
-                        {'label': 'Original Labels', 'value': 'original'},
-                        {'label': 'VADER Labels', 'value': 'vader'}
-                    ],
-                    value='original',
-                    style={'width': '100%'}
-                )
-            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '20px'}),
-            
-            html.Div([
-                html.Label('Select Time Period:'),
-                dcc.Dropdown(
-                    id='time-period',
-                    options=[
-                        {'label': 'All Time', 'value': 'all'},
-                        {'label': 'Last Month', 'value': 'month'},
-                        {'label': 'Last Week', 'value': 'week'}
-                    ],
-                    value='all',
-                    style={'width': '100%'}
-                )
-            ], style={'width': '30%', 'display': 'inline-block'})
-        ], className='section-card', style={'marginBottom': '30px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px', 'border': 'none'}),
-        
-        # Main metrics
-        html.Div([
-            html.Div([
-                html.H3('Total Tweets', style={'textAlign': 'center'}),
-                html.H2(id='total-tweets', style={'textAlign': 'center', 'color': '#22304a'})
-            ], className='metric-box'),
-            html.Div([
-                html.H3('Positive Tweets', style={'textAlign': 'center'}),
-                html.H2(id='positive-tweets', style={'textAlign': 'center', 'color': '#27ae60'})
-            ], className='metric-box'),
-            html.Div([
-                html.H3('Negative Tweets', style={'textAlign': 'center'}),
-                html.H2(id='negative-tweets', style={'textAlign': 'center', 'color': '#c0392b'})
-            ], className='metric-box'),
-            html.Div([
-                html.H3('Neutral Tweets', style={'textAlign': 'center'}),
-                html.H2(id='neutral-tweets', style={'textAlign': 'center', 'color': '#3498db'})
-            ], className='metric-box')
-        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
-        
-        # Sentiment Distribution and Sentiment Over Time
-        html.Div([
-            html.Div([
-                html.H2('Sentiment Distribution', style={'textAlign': 'center'}),
-                dcc.Graph(id='sentiment-distribution')
-            ], style={'width': '48%', 'display': 'inline-block'}),
-            html.Div([
-                html.H2('Sentiment Over Time', style={'textAlign': 'center'}),
-                dcc.Graph(id='sentiment-timeline')
-            ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-        ], className='section-card'),
-        
-        # Word Clouds Section
-        html.Div([
-            html.H2('Word Clouds Analysis', style={'textAlign': 'center', 'marginBottom': '20px'}),
-            html.Div([
-                html.Div([
-                    html.H3('Positive Sentiment', style={'textAlign': 'center'}),
-                    html.Img(id='positive-wordcloud', style={'width': '100%'})
-                ], style={'width': '32%', 'display': 'inline-block'}),
-                html.Div([
-                    html.H3('Negative Sentiment', style={'textAlign': 'center'}),
-                    html.Img(id='negative-wordcloud', style={'width': '100%'})
-                ], style={'width': '32%', 'display': 'inline-block'}),
-                html.Div([
-                    html.H3('Neutral Sentiment', style={'textAlign': 'center'}),
-                    html.Img(id='neutral-wordcloud', style={'width': '100%'})
-                ], style={'width': '32%', 'display': 'inline-block'})
-            ])
-        ], className='section-card'),
-        
-        # Word Frequency Analysis
-        html.Div([
-            html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px'}),
-            html.Div([
-                html.Div([
-                    html.H3('Positive Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='positive-words')
-                ], style={'width': '32%', 'display': 'inline-block'}),
-                html.Div([
-                    html.H3('Negative Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='negative-words')
-                ], style={'width': '32%', 'display': 'inline-block'}),
-                html.Div([
-                    html.H3('Neutral Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='neutral-words')
-                ], style={'width': '32%', 'display': 'inline-block'})
-            ])
-        ], className='section-card'),
-
-        # Unified AI Insights Section
-        html.Div([
-            html.H2('AI Insights', style={'textAlign': 'center', 'marginBottom': '20px'}),
-            dcc.Graph(id='ai-insights-line-chart'),
-            html.Hr(style={'margin': '32px 0', 'borderTop': '1px solid #e3e7ee'}),
-            html.Div(id='ai-insights-box')
-        ], className='section-card', style={'maxWidth': '950px', 'margin': '0 auto 36px auto', 'background': '#f8fafd'})
-    ])
 
 # Callback for updating metrics
 @callback(
@@ -694,45 +671,6 @@ def update_ai_insights(sentiment_type, time_period):
         anomaly_text if anomaly_text else None
     ])
 
-# Callback for AI Insights Line Chart
-@callback(
-    Output('ai-insights-line-chart', 'figure'),
-    [Input('sentiment-type', 'value'),
-     Input('time-period', 'value')]
-)
-def update_ai_insights_line_chart(sentiment_type, time_period):
-    sentiment_col = 'sentiment_label' if sentiment_type == 'original' else 'vader_sentiment'
-    if time_period != 'all' and 'date' in df.columns:
-        if time_period == 'month':
-            filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(months=1))]
-        else:  # week
-            filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(weeks=1))]
-    else:
-        filtered_df = df
-    if 'date' not in filtered_df.columns or filtered_df.empty:
-        return go.Figure()
-    # Group by month and sentiment
-    timeline_data = filtered_df.groupby([filtered_df['date'].dt.to_period('M').dt.to_timestamp(), sentiment_col]).size().reset_index(name='count')
-    fig = px.line(
-        timeline_data,
-        x='date',
-        y='count',
-        color=sentiment_col,
-        title='Sentiment Trends Over Time',
-        labels={'date': 'Date', 'count': 'Number of Tweets'},
-        color_discrete_map={'positive': '#27ae60', 'negative': '#c0392b', 'neutral': '#3498db'}
-    )
-    fig.update_layout(
-        xaxis_title='Date',
-        yaxis_title='Number of Tweets',
-        hovermode='x unified',
-        legend_title_text='Sentiment',
-        plot_bgcolor='#f8fafd',
-        paper_bgcolor='#fff',
-        margin=dict(l=40, r=40, t=60, b=40)
-    )
-    return fig
-
 # Callback to update tweet table based on date range
 @app.callback(
     Output('tweet-table', 'data'),
@@ -800,42 +738,45 @@ def update_topic_model(selected_sentiment):
     [Input('emotion-date-range', 'start_date'), Input('emotion-date-range', 'end_date')]
 )
 def update_emotion_analysis(start_date, end_date):
-    # Filter tweets by date
-    if not start_date or not end_date:
-        filtered = df
-    else:
-        filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
-    tweets = filtered['cleaned_tweets'].dropna().astype(str).tolist()
-    # For speed, sample up to 100 tweets
-    if len(tweets) > 100:
-        tweets = np.random.choice(tweets, 100, replace=False)
-    # Use HuggingFace pipeline for emotion classification
-    emotion_pipe = pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base', top_k=1)
-    emotion_results = emotion_pipe(tweets)
-    emotions = [res[0]['label'] for res in emotion_results]
-    # Distribution chart
-    emotion_counts = pd.Series(emotions).value_counts().sort_values(ascending=False)
-    fig = px.bar(
-        emotion_counts,
-        x=emotion_counts.index,
-        y=emotion_counts.values,
-        labels={'x': 'Emotion', 'y': 'Number of Tweets'},
-        title='Emotion Distribution',
-        color=emotion_counts.index,
-        color_discrete_sequence=px.colors.qualitative.Pastel
-    )
-    fig.update_layout(xaxis_title='Emotion', yaxis_title='Number of Tweets', plot_bgcolor='#f8fafd', paper_bgcolor='#fff')
-    # Example tweets for each emotion
-    example_divs = []
-    for emotion in emotion_counts.index:
-        idx = [i for i, e in enumerate(emotions) if e == emotion]
-        if idx:
-            example_tweet = tweets[idx[0]]
-            example_divs.append(html.Div([
-                html.Strong(f"{emotion.title()}: "),
-                html.Span(example_tweet, style={'fontStyle': 'italic', 'color': '#6b7a90'})
-            ], style={'marginBottom': '12px'}))
-    return fig, html.Div(example_divs)
+    try:
+        if not start_date or not end_date:
+            filtered = df
+        else:
+            filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
+        tweets = filtered['cleaned_tweets'].dropna().astype(str).tolist()
+        if not tweets:
+            return go.Figure(), html.Div('No tweets found for the selected date range.', style={'textAlign': 'center', 'color': '#c0392b'})
+        # For speed, sample up to 100 tweets
+        if len(tweets) > 100:
+            tweets = np.random.choice(tweets, 100, replace=False)
+        emotion_pipe = pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base', top_k=1)
+        emotion_results = emotion_pipe(tweets)
+        emotions = [res[0]['label'] for res in emotion_results]
+        emotion_counts = pd.Series(emotions).value_counts().sort_values(ascending=False)
+        if emotion_counts.empty:
+            return go.Figure(), html.Div('No emotions detected in the selected tweets.', style={'textAlign': 'center', 'color': '#c0392b'})
+        fig = px.bar(
+            emotion_counts,
+            x=emotion_counts.index,
+            y=emotion_counts.values,
+            labels={'x': 'Emotion', 'y': 'Number of Tweets'},
+            title='Emotion Distribution',
+            color=emotion_counts.index,
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        fig.update_layout(xaxis_title='Emotion', yaxis_title='Number of Tweets', plot_bgcolor='#f8fafd', paper_bgcolor='#fff')
+        example_divs = []
+        for emotion in emotion_counts.index:
+            idx = [i for i, e in enumerate(emotions) if e == emotion]
+            if idx:
+                example_tweet = tweets[idx[0]]
+                example_divs.append(html.Div([
+                    html.Strong(f"{emotion.title()}: "),
+                    html.Span(example_tweet, style={'fontStyle': 'italic', 'color': '#6b7a90'})
+                ], style={'marginBottom': '12px'}))
+        return fig, html.Div(example_divs)
+    except Exception as e:
+        return go.Figure(), html.Div(f'Error: {str(e)}', style={'textAlign': 'center', 'color': '#c0392b'})
 
 if __name__ == '__main__':
     print("\n--- Starting Multi-Page Dashboard ---")
