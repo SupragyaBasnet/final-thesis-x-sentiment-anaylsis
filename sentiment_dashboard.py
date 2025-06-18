@@ -14,6 +14,7 @@ from datetime import datetime
 from bertopic import BERTopic
 from transformers import pipeline
 from sklearn.metrics import confusion_matrix, classification_report
+import locale
 
 # Load the cleaned data with original and VADER sentiments
 # Ensure these files exist after running data_preprocessing.py and sentiment_analysis.py
@@ -150,21 +151,22 @@ def overview_layout():
         
         # Word Frequency Analysis
         html.Div([
-            html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px'}),
+            html.H2('Top Words by Sentiment', style={'textAlign': 'center', 'marginBottom': '20px', 'fontSize': '2em'}),
+            html.P('These are the most frequent words in each sentiment category. The bigger the bar, the more often the word appears in tweets.', style={'textAlign': 'center', 'fontSize': '1.15em', 'color': '#6b7a90', 'marginBottom': '32px'}),
             html.Div([
                 html.Div([
-                    html.H3('Positive Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='positive-words')
-                ], style={'width': '32%', 'display': 'inline-block'}),
+                    html.H3('Positive Words', style={'textAlign': 'center', 'fontSize': '1.3em'}),
+                    dcc.Graph(id='positive-words', config={'displayModeBar': False})
+                ], style={'width': '32%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0 18px'}),
                 html.Div([
-                    html.H3('Negative Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='negative-words')
-                ], style={'width': '32%', 'display': 'inline-block'}),
+                    html.H3('Negative Words', style={'textAlign': 'center', 'fontSize': '1.3em'}),
+                    dcc.Graph(id='negative-words', config={'displayModeBar': False})
+                ], style={'width': '32%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0 18px'}),
                 html.Div([
-                    html.H3('Neutral Words', style={'textAlign': 'center'}),
-                    dcc.Graph(id='neutral-words')
-                ], style={'width': '32%', 'display': 'inline-block'})
-            ])
+                    html.H3('Neutral Words', style={'textAlign': 'center', 'fontSize': '1.3em'}),
+                    dcc.Graph(id='neutral-words', config={'displayModeBar': False})
+                ], style={'width': '32%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0 18px'})
+            ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'flex-start'})
         ], className='section-card'),
 
         # Unified AI Insights Section
@@ -517,7 +519,6 @@ def update_wordclouds(sentiment_type, time_period):
 )
 def update_word_frequencies(sentiment_type, time_period):
     sentiment_col = 'sentiment_label' if sentiment_type == 'original' else 'vader_sentiment'
-    
     if time_period != 'all' and 'date' in df.columns:
         if time_period == 'month':
             filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(months=1))]
@@ -525,32 +526,45 @@ def update_word_frequencies(sentiment_type, time_period):
             filtered_df = df[df['date'] >= (pd.Timestamp.now() - pd.DateOffset(weeks=1))]
     else:
         filtered_df = df
-    
     def create_word_freq_figure(text, title, color):
-        words = get_word_frequencies(text)
+        words = get_word_frequencies(text, n=10)
         words_df = pd.DataFrame(words, columns=['word', 'count'])
-        
+        words_df['count_str'] = words_df['count'].apply(lambda x: locale.format_string('%d', x, grouping=True))
         fig = px.bar(
             words_df,
             x='count',
             y='word',
             orientation='h',
             title=title,
-            color_discrete_sequence=[color]
+            color_discrete_sequence=[color],
+            text='count_str',
         )
-        
+        fig.update_traces(
+            textposition='outside',
+            marker_line_width=0,
+            marker=dict(line=dict(width=0)),
+            width=0.8
+        )
         fig.update_layout(
             xaxis_title='Frequency',
             yaxis_title='Word',
-            showlegend=False
+            showlegend=False,
+            margin=dict(l=140, r=40, t=60, b=60),
+            plot_bgcolor='#f8fafd',
+            paper_bgcolor='#fff',
+            font=dict(size=20, family='Inter, Segoe UI, Roboto, Arial, sans-serif'),
+            height=600,
+            bargap=0.4,
+            title=dict(font=dict(size=26, family='Inter, Segoe UI, Roboto, Arial, sans-serif'), x=0.5, xanchor='center'),
+            xaxis=dict(showgrid=True, gridcolor='#e3e7ee', tickfont=dict(size=18), tickformat='.2s', ticklabelposition='outside'),
+            yaxis=dict(showgrid=False, tickfont=dict(size=18)),
+            dragmode=False
         )
-        
+        fig.update_layout(modebar=dict(remove=['zoom', 'pan', 'select', 'lasso2d', 'zoomIn', 'zoomOut', 'autoScale', 'resetScale']))
         return fig
-    
     positive_text = " ".join(filtered_df[filtered_df[sentiment_col] == 'positive']['cleaned_tweets'].dropna().tolist())
     negative_text = " ".join(filtered_df[filtered_df[sentiment_col] == 'negative']['cleaned_tweets'].dropna().tolist())
     neutral_text = " ".join(filtered_df[filtered_df[sentiment_col] == 'neutral']['cleaned_tweets'].dropna().tolist())
-    
     return (
         create_word_freq_figure(positive_text, 'Top Positive Words', '#27ae60'),
         create_word_freq_figure(negative_text, 'Top Negative Words', '#c0392b'),
@@ -702,4 +716,5 @@ def update_topic_model(selected_sentiment):
 if __name__ == '__main__':
     print("\n--- Starting Multi-Page Dashboard ---")
     print("Open your web browser and go to http://127.0.0.1:8050/")
+    app.run(debug=True) 
     app.run(debug=True) 
