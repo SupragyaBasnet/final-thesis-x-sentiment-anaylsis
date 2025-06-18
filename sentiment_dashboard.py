@@ -51,7 +51,6 @@ navbar = html.Nav([
     dcc.Link('Overview', href='/', className='nav-link'),
     dcc.Link('Tweet Explorer', href='/explorer', className='nav-link'),
     dcc.Link('Topic Modeling', href='/topics', className='nav-link'),
-    dcc.Link('Emotion Analysis', href='/emotions', className='nav-link'),
     dcc.Link('Model Comparison', href='/comparison', className='nav-link'),
 ], className='navbar')
 
@@ -266,36 +265,6 @@ def topics_layout():
         )
     ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
 
-def emotions_layout():
-    emotions = ['joy', 'anger', 'fear', 'sadness', 'surprise', 'love', 'neutral']
-    min_date = df['date'].min().date() if 'date' in df.columns else None
-    max_date = df['date'].max().date() if 'date' in df.columns else None
-    return html.Div([
-        html.H1('Emotion Analysis', style={'textAlign': 'center'}),
-        html.P('Analyze the emotional tone of tweets using a pre-trained AI model.', style={'textAlign': 'center', 'marginBottom': '24px'}),
-        html.Div([
-            html.Label('Select Date Range:'),
-            dcc.DatePickerRange(
-                id='emotion-date-range',
-                min_date_allowed=min_date,
-                max_date_allowed=max_date,
-                start_date=min_date,
-                end_date=max_date,
-                display_format='YYYY-MM-DD',
-                style={'marginBottom': '18px'}
-            )
-        ], style={'textAlign': 'center', 'marginBottom': '18px'}),
-        dcc.Loading(
-            id='emotion-loading',
-            type='circle',
-            color='#2d7ff9',
-            children=[
-                dcc.Graph(id='emotion-distribution'),
-                html.Div(id='emotion-examples')
-            ]
-        )
-    ], style={'maxWidth': '900px', 'margin': '0 auto', 'background': '#fff', 'borderRadius': '14px', 'boxShadow': '0 2px 10px rgba(34,48,74,0.06)', 'padding': '32px 28px', 'marginBottom': '32px'})
-
 def comparison_layout():
     # Only show if both sentiment_label and vader_sentiment exist
     if 'sentiment_label' not in df.columns or 'vader_sentiment' not in df.columns:
@@ -352,8 +321,6 @@ def display_page(pathname):
         return explorer_layout()
     elif pathname == '/topics':
         return topics_layout()
-    elif pathname == '/emotions':
-        return emotions_layout()
     elif pathname == '/comparison':
         return comparison_layout()
     else:
@@ -731,52 +698,6 @@ def update_topic_model(selected_sentiment):
             html.P(f"Example Tweet: {example_tweet}", style={'fontStyle': 'italic', 'color': '#6b7a90', 'marginBottom': '18px'})
         ], style={'marginBottom': '18px', 'padding': '12px', 'background': '#f8fafd', 'borderRadius': '8px'}))
     return html.Div(topic_divs)
-
-# Callback to run emotion analysis and display results
-@app.callback(
-    [Output('emotion-distribution', 'figure'), Output('emotion-examples', 'children')],
-    [Input('emotion-date-range', 'start_date'), Input('emotion-date-range', 'end_date')]
-)
-def update_emotion_analysis(start_date, end_date):
-    try:
-        if not start_date or not end_date:
-            filtered = df
-        else:
-            filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
-        tweets = filtered['cleaned_tweets'].dropna().astype(str).tolist()
-        if not tweets:
-            return go.Figure(), html.Div('No tweets found for the selected date range.', style={'textAlign': 'center', 'color': '#c0392b'})
-        # For speed, sample up to 100 tweets
-        if len(tweets) > 100:
-            tweets = np.random.choice(tweets, 100, replace=False)
-        emotion_pipe = pipeline('text-classification', model='j-hartmann/emotion-english-distilroberta-base', top_k=1)
-        emotion_results = emotion_pipe(tweets)
-        emotions = [res[0]['label'] for res in emotion_results]
-        emotion_counts = pd.Series(emotions).value_counts().sort_values(ascending=False)
-        if emotion_counts.empty:
-            return go.Figure(), html.Div('No emotions detected in the selected tweets.', style={'textAlign': 'center', 'color': '#c0392b'})
-        fig = px.bar(
-            emotion_counts,
-            x=emotion_counts.index,
-            y=emotion_counts.values,
-            labels={'x': 'Emotion', 'y': 'Number of Tweets'},
-            title='Emotion Distribution',
-            color=emotion_counts.index,
-            color_discrete_sequence=px.colors.qualitative.Pastel
-        )
-        fig.update_layout(xaxis_title='Emotion', yaxis_title='Number of Tweets', plot_bgcolor='#f8fafd', paper_bgcolor='#fff')
-        example_divs = []
-        for emotion in emotion_counts.index:
-            idx = [i for i, e in enumerate(emotions) if e == emotion]
-            if idx:
-                example_tweet = tweets[idx[0]]
-                example_divs.append(html.Div([
-                    html.Strong(f"{emotion.title()}: "),
-                    html.Span(example_tweet, style={'fontStyle': 'italic', 'color': '#6b7a90'})
-                ], style={'marginBottom': '12px'}))
-        return fig, html.Div(example_divs)
-    except Exception as e:
-        return go.Figure(), html.Div(f'Error: {str(e)}', style={'textAlign': 'center', 'color': '#c0392b'})
 
 if __name__ == '__main__':
     print("\n--- Starting Multi-Page Dashboard ---")

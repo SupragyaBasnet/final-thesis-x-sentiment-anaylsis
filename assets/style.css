@@ -175,12 +175,14 @@ button, .dash-table-container .dash-spreadsheet-container button {
     color: #fff;
     border: none;
     border-radius: 8px;
-    padding: 10px 22px;
-    font-size: 1em;
-    font-weight: 600;
+    padding: 12px 28px;
+    font-size: 1.08em;
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
     box-shadow: 0 1px 4px rgba(34,48,74,0.04);
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 button:hover, .dash-table-container .dash-spreadsheet-container button:hover {
     background: #174ea6;
@@ -193,4 +195,10 @@ button:hover, .dash-table-container .dash-spreadsheet-container button:hover {
 }
 .dash-table-container .dash-spreadsheet-container th, .dash-table-container .dash-spreadsheet-container td {
     border: none !important;
+    font-size: 1.05em;
+    color: #22304a;
+}
+.dash-table-container .dash-spreadsheet-container th {
+    background: #f7f9fb;
+    font-weight: 700;
 } 
